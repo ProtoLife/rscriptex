@@ -30,7 +30,7 @@ defmodule Rscript do
         if first == "/" do
           fname
         else
-          Path.join(:code.priv_dir(:rscript), fname)
+          Path.join(:code.priv_dir(:rscript), "R", fname)
         end
     end
     script_runner = Keyword.get(opts, :script_runner, :littler)

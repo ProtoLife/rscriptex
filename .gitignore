@@ -22,5 +22,11 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 rscript-*.tar
 
-# Log file
-log
+# Runtime data
+SessionEnv.RData
+SpaceEnv.RData
+ExperimentsEnv.RData
+
+# Log files
+*arg.json
+*log.json

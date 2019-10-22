@@ -108,7 +108,7 @@ jsonLayout <- function(level, msg, id = "", ...) {
   paste0(jsonlite::toJSON(output_list, simplifyVector = TRUE, auto_unbox = TRUE), "\n")
 }
 
-# Set up logging to JSON file
+# Save logging context in R options and set up logging to JSON file
 initLogging <- function(context, logPath) {
   options(context)
   threshold <- flog.threshold("TRACE")
@@ -129,7 +129,7 @@ writeArgs <- function(context, args, argPath) {
   invisible(TRUE)
 }
 
-# MAIN SCRIPT SETUP
+# Parse command line args portably, whether from littler or Rscript
 parseArgs <- function() {
   if (exists("argv")) {
     # For littler, use argv
@@ -142,23 +142,63 @@ parseArgs <- function() {
   commandArgs(trailingOnly = TRUE)
 }
 
+# Create a session environment
+makeSessionEnv <- function(sessionId, demo = FALSE, restart = FALSE, clean = FALSE) {
+  sessionEnv <- new.env(parent = emptyenv())
+  sessionEnv$createdAt <- as.integer(Sys.time())
+  sessionEnv$sessionId <- sessionId
+  sessionEnv$sessName <- paste0("Session ", as.character(sessionEnv$createdAt))
+  sessionEnv$userId <- "anonymous"
+  sessionEnv$userEmail <- "anonymous@daptics.ai"
+  sessionEnv$firstName <- "Anonymous"
+  sessionEnv$lastName <- "User"
+  sessionEnv$hostname <- Sys.info()[[4]]
+  sessionEnv$workingDir <- getwd()
+  sessionEnv$pathname <- dirname(sessionEnv$workingDir)
+  sessionEnv$publicDir <- file.path(sessionEnv$pathname, "www")
+  sessionEnv$logDir <- file.path(sessionEnv$workingDir, "output")
+  sessionEnv$sessTag <- basename(sessionEnv$pathname)
+  versionFile <- file.path(sessionEnv$publicDir, "git-version")
+  sessionEnv$version <- readVersion(versionFile)
+  sessionEnv$startupFlags <- list(demo = demo, restart = restart, clean = clean)
+  sessionEnv$loginUri <- NA
+  sessionEnv$apiBaseUri <- NA
+  sessionEnv$privBaseUri <- NA
+  sessionEnv$apiKey <- NA
+  save(sessionEnv, file = "SessionEnv.RData")
+  sessionEnv
+}
+
+# Script common startup
 # args[[1]] is the session id
 # args[[2]] is the command id
 startup <- function(scriptName, args) {
   sessionId <- if (length(args) >= 1) args[[1]] else makeUlid("S")
   commandId <- if (length(args) >= 2) args[[2]] else makeUlid("C")
+  sessionEnv <<- makeSessionEnv(sessionId)
+  dir.create(sessionEnv$logDir, showWarnings = FALSE, recursive = TRUE)
+  logPath <- file.path(sessionEnv$logDir, paste0(commandId, "_", scriptName, "_log.json"))
+  argPath <- file.path(sessionEnv$logDir, paste0(commandId, "_", scriptName, "_arg.json"))
+  # Set up logging and arg file
   context <- list(
     script_name = scriptName,
     session_id = sessionId,
     command_id = commandId,
     main_pid = Sys.getpid(),
     phase = "allocating")
-  logPath <- file.path(".", paste0(commandId, "_", scriptName, "_log.json"))
-  argPath <- file.path(".", paste0(commandId, "_", scriptName, "_arg.json"))
-  # Set up logging
   initLogging(context, logPath)
   writeArgs(context, args, argPath)
   invisible(TRUE)
+}
+
+#' Read a single line of text from the specified location, or return the default if the
+#' file cannot be read.
+#' @param path The file location.
+#' @param default The string to return if the file can not be read.
+#' @return A string: either the first line of text in the specified file, or the default.
+readVersion <- function(path, default = "<unknown>") {
+  if (file.exists(path)) { return(readLines(path, n = 1)) }
+  default
 }
 
 # Read JSON data from stdin
