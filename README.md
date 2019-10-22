@@ -1,10 +1,10 @@
 # Rscript
 
-Testing communication between Elixir and Rscripts.
+Testing communication between Elixir and Rscript
 
 ```
 iex -S mix
-iex(1)> Rscript.start_link("testJsonChars.r", [args: ["S.1", "J.2"], json_arg: %{a: 1, b: "hello"}, protocol: :chars])
+iex(1)> Rscript.start_link("testJsonChars.r", [script_runner: :littler, protocol: :chars, args: [], json_arg: %{a: 1, b: "hello"}])
 ```
 
 
