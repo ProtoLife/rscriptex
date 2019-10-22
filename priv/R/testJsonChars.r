@@ -144,27 +144,32 @@ parseArgs <- function() {
 
 # Create a session environment
 makeSessionEnv <- function(sessionId, demo = FALSE, restart = FALSE, clean = FALSE) {
-  sessionEnv <- new.env(parent = emptyenv())
-  sessionEnv$createdAt <- as.integer(Sys.time())
-  sessionEnv$sessionId <- sessionId
-  sessionEnv$sessName <- paste0("Session ", as.character(sessionEnv$createdAt))
-  sessionEnv$userId <- "anonymous"
-  sessionEnv$userEmail <- "anonymous@daptics.ai"
-  sessionEnv$firstName <- "Anonymous"
-  sessionEnv$lastName <- "User"
-  sessionEnv$hostname <- Sys.info()[[4]]
-  sessionEnv$workingDir <- getwd()
-  sessionEnv$pathname <- dirname(sessionEnv$workingDir)
-  sessionEnv$publicDir <- file.path(sessionEnv$pathname, "www")
-  sessionEnv$logDir <- file.path(sessionEnv$workingDir, "output")
-  sessionEnv$sessTag <- basename(sessionEnv$pathname)
-  versionFile <- file.path(sessionEnv$publicDir, "git-version")
-  sessionEnv$version <- readVersion(versionFile)
+  createdAt   <- as.integer(Sys.time())
+  workingDir  <- getwd()
+  logDir      <- file.path(workingDir, "output")
+  sessionDir  <- dirname(workingDir)
+  publicDir   <- file.path(sessionDir, "www")
+  versionFile <- file.path(publicDir, "git-version")
+  sessionEnv  <- new.env(parent = emptyenv())
+  sessionEnv$createdAt    <- createdAt
   sessionEnv$startupFlags <- list(demo = demo, restart = restart, clean = clean)
-  sessionEnv$loginUri <- NA
-  sessionEnv$apiBaseUri <- NA
-  sessionEnv$privBaseUri <- NA
-  sessionEnv$apiKey <- NA
+  sessionEnv$sessionId    <- sessionId
+  sessionEnv$sessName     <- paste0("Session ", as.character(createdAt))
+  sessionEnv$sessTag      <- basename(sessionDir)
+  sessionEnv$version      <- readVersion(versionFile)
+  sessionEnv$hostname     <- Sys.info()[[4]]
+  sessionEnv$pathname     <- sessionDir
+  sessionEnv$workingDir   <- workingDir
+  sessionEnv$logDir       <- logDir
+  sessionEnv$publicDir    <- publicDir
+  sessionEnv$userId       <- "anonymous"
+  sessionEnv$userEmail    <- "anonymous@daptics.ai"
+  sessionEnv$firstName    <- "Anonymous"
+  sessionEnv$lastName     <- "User"
+  sessionEnv$loginUri     <- NA
+  sessionEnv$apiBaseUri   <- NA
+  sessionEnv$apiKey       <- NA
+  sessionEnv$privBaseUri  <- NA
   save(sessionEnv, file = "SessionEnv.RData")
   sessionEnv
 }
